@@ -1,0 +1,32 @@
+{
+    "promptEditor": [
+        "[contenteditable='true'][data-id]",
+        "#prompt-textarea",
+        "div[contenteditable='true']"
+    ],
+    "sendButton": [
+        "button[data-testid='send-button']",
+        "button[aria-label='Send message']",
+        "button[aria-label='Send prompt']",
+        "button[type='submit']"
+    ],
+    "stopButton": [
+        "button[aria-label='Stop generating']",
+        "[data-testid='stop-button']"
+    ],
+    "assistantMsg": [
+        "[data-message-author-role='assistant']"
+    ],
+    "userMsg": [
+        "[data-message-author-role='user']"
+    ],
+    "uploadButton": [
+        "button[data-testid='composer-plus-btn']",
+        "#composer-plus-btn",
+        "button[aria-label='Add files and more']",
+        "button[aria-label='Attach files']",
+        "button[aria-label='Upload files']",
+        "button[data-testid='upload-button']",
+        "button[aria-label='Add photos and files']"
+    ]
+}
