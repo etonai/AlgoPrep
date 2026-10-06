@@ -1,0 +1,25 @@
+# Gradle
+.gradle/
+build/
+out/
+
+# JCEF native binaries — downloaded on first run (~100 MB), must not be committed
+jcef-bundle/
+
+# Local config — real chat URLs must never be committed
+config.properties
+config.local.properties
+
+# IDE
+*.iml
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/dictionaries/
+.idea/shelf/
+.idea/httpRequests/
+.idea/sonarlint/
+
+# OS
+.DS_Store
+Thumbs.db
