@@ -111,7 +111,7 @@ class StudiedLabelAndButtonsTest {
         store.setFile(StudiedStore.fileFor(home.toString()).orElseThrow());
         reporter = new StatusReporter();
         reporter.attach(m -> { });
-        edt(() -> controller = new StudiedController(settings, selection, store, reporter, (p, m) -> true));
+        edt(() -> controller = new StudiedController(settings, selection, store, reporter, (p, m) -> true, t -> { }));
     }
 
     // ---- the label ----
@@ -310,7 +310,7 @@ class StudiedLabelAndButtonsTest {
         StatusReporter local = new StatusReporter();
         local.attach(messages::add);
         edt(() -> {
-            StudiedController c = new StudiedController(settings, selection, store, local, (p, m) -> true);
+            StudiedController c = new StudiedController(settings, selection, store, local, (p, m) -> true, t -> { });
             c.bindClear(clear);
             selection.select(problem);
         });

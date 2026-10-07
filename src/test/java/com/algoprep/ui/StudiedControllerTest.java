@@ -53,6 +53,10 @@ class StudiedControllerTest {
 
     private final List<String> questions = new java.util.ArrayList<>();
     private boolean answer = true;
+    private final List<String> copyQuestions = new java.util.ArrayList<>();
+    private final List<String> copied = new java.util.ArrayList<>();
+    private boolean copyAnswer = true;
+    private boolean clipboardFails = false;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -73,8 +77,17 @@ class StudiedControllerTest {
 
         edt(() -> {
             controller = new StudiedController(settings, selection, store, reporter, (parent, message) -> {
+                if (message.startsWith("Copy")) {
+                    copyQuestions.add(message);
+                    return copyAnswer;
+                }
                 questions.add(message);
                 return answer;
+            }, text -> {
+                if (clipboardFails) {
+                    throw new IllegalStateException("locked");
+                }
+                copied.add(text);
             });
             studied1 = new JButton("Studied");
             studied2 = new JButton("Studied");
@@ -117,7 +130,8 @@ class StudiedControllerTest {
         settle();
 
         assertEquals(Optional.of(LocalDate.of(2026, 10, 7)), store.studiedOn(problem.key()));
-        assertEquals(List.of("Marked 1 - Two Sum as studied on 2026-10-07."), status);
+        assertEquals(List.of("Marked 1 - Two Sum as studied on 2026-10-07.",
+                "Copied \"Studied leetcode problem #1\" to the clipboard."), status);
         assertTrue(clear1.isEnabled());
         assertTrue(clear2.isEnabled());
         assertEquals("Studied 2026-10-07. Press to update to today.", studied1.getToolTipText());
@@ -221,5 +235,62 @@ class StudiedControllerTest {
 
         assertTrue(status.isEmpty());
         assertFalse(Files.exists(home.resolve(StudiedStore.FILE_NAME)));
+    }
+
+    // ---- the Studied prompt ----
+
+    @Test
+    void yesCopiesThePromptAfterTheDateIsRecorded() throws Exception {
+        select();
+        edt(() -> studied2.doClick());
+        settle();
+
+        assertEquals(List.of("Copy Studied prompt to clipboard?"), copyQuestions);
+        assertEquals(List.of("Studied leetcode problem #1"), copied);
+        assertEquals(Optional.of(LocalDate.of(2026, 10, 7)), store.studiedOn(problem.key()));
+    }
+
+    @Test
+    void noCopiesNothingButStillRecordsTheDate() throws Exception {
+        select();
+        copyAnswer = false;
+        edt(() -> studied1.doClick());
+        settle();
+
+        assertEquals(1, copyQuestions.size());
+        assertEquals(List.of(), copied);
+        assertEquals(List.of("Marked 1 - Two Sum as studied on 2026-10-07."), status);
+        assertTrue(store.studiedOn(problem.key()).isPresent());
+    }
+
+    @Test
+    void noPromptQuestionWhenMarkingFails() throws Exception {
+        select();
+        Files.createDirectory(home.resolve(StudiedStore.FILE_NAME + ".tmp"));
+        edt(() -> studied1.doClick());
+        settle();
+
+        assertEquals(List.of(), copyQuestions);
+        assertEquals(List.of(), copied);
+    }
+
+    @Test
+    void aClipboardFailureIsReportedAndTheDateIsKept() throws Exception {
+        select();
+        clipboardFails = true;
+        edt(() -> studied1.doClick());
+        settle();
+
+        assertTrue(store.studiedOn(problem.key()).isPresent());
+        assertEquals("Could not copy to the clipboard: locked", status.get(status.size() - 1));
+    }
+
+    @Test
+    void triggerAsksToo() throws Exception {
+        select();
+        edt(() -> controller.trigger());
+        settle();
+
+        assertEquals(List.of("Studied leetcode problem #1"), copied);
     }
 }

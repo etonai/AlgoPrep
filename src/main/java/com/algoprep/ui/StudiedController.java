@@ -5,6 +5,7 @@ import com.algoprep.config.SettingsStore;
 import com.algoprep.problem.ProblemNames;
 import com.algoprep.problem.SelectedProblemModel;
 import com.algoprep.studied.StudiedAvailability;
+import com.algoprep.studied.StudiedPrompt;
 import com.algoprep.studied.StudiedStore;
 
 import javax.swing.*;
@@ -35,26 +36,48 @@ public class StudiedController {
     @FunctionalInterface
     public interface Confirmer {
         boolean confirm(Component parent, String message);
+
+        /** Same, saying which answer Enter gives. Stubs may ignore it. */
+        default boolean confirm(Component parent, String message, boolean defaultYes) {
+            return confirm(parent, message);
+        }
     }
 
-    /** The real dialog: Yes and No, with No as the default so Enter does not delete a date. */
-    static boolean showDialog(Component parent, String message) {
-        Object[] options = {"Yes", "No"};
-        int answer = JOptionPane.showOptionDialog(parent, message, "Are you sure?",
-                JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
-        return answer == 0;
+    /** The real dialog: Yes and No. Escape or closing the window counts as No. */
+    static final class DialogConfirmer implements Confirmer {
+        @Override
+        public boolean confirm(Component parent, String message) {
+            return confirm(parent, message, false);
+        }
+
+        @Override
+        public boolean confirm(Component parent, String message, boolean defaultYes) {
+            Object[] options = {"Yes", "No"};
+            int answer = JOptionPane.showOptionDialog(parent, message, "Are you sure?",
+                    JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options,
+                    defaultYes ? options[0] : options[1]);
+            return answer == 0;
+        }
     }
 
     private final Confirmer confirmer;
+    private final ClipboardWriter clipboard;
 
     public StudiedController(SettingsStore settings, SelectedProblemModel selection,
                              StudiedStore store, StatusReporter status) {
-        this(settings, selection, store, status, StudiedController::showDialog);
+        this(settings, selection, store, status, new DialogConfirmer(), ClipboardWriter.SYSTEM);
     }
 
     public StudiedController(SettingsStore settings, SelectedProblemModel selection,
                              StudiedStore store, StatusReporter status, Confirmer confirmer) {
+        this(settings, selection, store, status, confirmer, ClipboardWriter.SYSTEM);
+    }
+
+    public StudiedController(SettingsStore settings, SelectedProblemModel selection,
+                             StudiedStore store, StatusReporter status, Confirmer confirmer,
+                             ClipboardWriter clipboard) {
         this.confirmer = confirmer;
+        this.clipboard = clipboard;
         this.settings = settings;
         this.selection = selection;
         this.store = store;
@@ -69,7 +92,7 @@ public class StudiedController {
 
     /** Attaches a Studied button: pressing it marks the selected problem as studied today. */
     public void bindStudied(JButton button) {
-        button.addActionListener(e -> markStudied());
+        button.addActionListener(e -> markStudied(button));
         studiedButtons.add(button);
         apply();
     }
@@ -84,13 +107,13 @@ public class StudiedController {
     /** One trigger for every Studied button, for a future shortcut. */
     public void trigger() {
         if (latest.canMark()) {
-            markStudied();
+            markStudied(studiedButtons.isEmpty() ? null : studiedButtons.get(0));
         }
     }
 
     // ---- behavior ----
 
-    private void markStudied() {
+    private void markStudied(JButton source) {
         Optional<String> key = selection.selectedKey();
         if (key.isEmpty() || !latest.canMark()) {
             return;
@@ -100,6 +123,25 @@ public class StudiedController {
             String name = ProblemNames.displayForKey(key.get());
             status.report("Marked " + name + " as studied on "
                     + store.studiedOn(key.get()).map(Object::toString).orElse("today") + ".");
+            offerPrompt(key.get(), source);
+        }
+    }
+
+    /** Asks whether to copy the Studied prompt, after the date is recorded. Yes is the default. */
+    private void offerPrompt(String key, JButton source) {
+        Optional<String> prompt = StudiedPrompt.forKey(key);
+        if (prompt.isEmpty()) {
+            return;
+        }
+        Component parent = source == null ? null : SwingUtilities.getWindowAncestor(source);
+        if (!confirmer.confirm(parent, "Copy Studied prompt to clipboard?", true)) {
+            return;
+        }
+        try {
+            clipboard.copy(prompt.get());
+            status.report("Copied \"" + prompt.get() + "\" to the clipboard.");
+        } catch (Exception | LinkageError e) {
+            status.report("Could not copy to the clipboard: " + e.getMessage());
         }
     }
 

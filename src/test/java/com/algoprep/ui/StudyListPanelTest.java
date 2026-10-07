@@ -114,7 +114,7 @@ class StudyListPanelTest {
             UploadController uploads = new UploadController(appState, settings, bridge, reporter,
                     workspace.selection(), tmp.resolve("stage").toString());
             StudiedController controls = new StudiedController(settings, workspace.selection(), studied, reporter,
-                    (p, m) -> true);
+                    (p, m) -> true, t -> { });
             panel = new StudyListPanel(model, workspace, uploads, controls, studied);
             studiedButton = find(panel, "Studied");
             clearButton = find(panel, "Clear Studied Tag");
