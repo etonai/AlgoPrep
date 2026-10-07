@@ -7,6 +7,7 @@ import com.algoprep.browser.BrowserPanel;
 import com.algoprep.browser.DomBridge;
 import com.algoprep.config.AppConfig;
 import com.algoprep.config.SettingsStore;
+import com.algoprep.display.FontScaleModel;
 import com.algoprep.problem.ProblemWorkspace;
 import com.algoprep.theme.NativeThemeModel;
 import com.algoprep.ui.StatusReporter;
@@ -36,6 +37,12 @@ public class Main {
         NativeThemeModel themeModel = new NativeThemeModel();
         themeModel.setTheme(settings.getTheme());
         themeModel.addListener((previous, current) -> settings.setTheme(current));
+
+        // The display text size is remembered across restarts. A missing or invalid saved value
+        // means the normal size.
+        FontScaleModel fontScale = new FontScaleModel();
+        fontScale.restore(settings.getFontScalePercent());
+        fontScale.addListener(() -> settings.setFontScalePercent(fontScale.percent()));
 
         // Scans the saved PROBLEMS directory and restores the last selection, if still found
         ProblemWorkspace problems = new ProblemWorkspace(settings, statusReporter::report);
@@ -85,7 +92,7 @@ public class Main {
 
         SwingUtilities.invokeLater(() ->
                 new AppFrame(appState, browserPanel, browser, chatBridge, settings, problems,
-                        config.getDefaultStagingRootPath(), themeModel,
+                        config.getDefaultStagingRootPath(), themeModel, fontScale,
                         statusReporter, browserShortcuts));
     }
 }

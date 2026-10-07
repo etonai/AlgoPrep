@@ -34,21 +34,32 @@ public final class MarkdownStyles {
         return palette(theme).background();
     }
 
-    /** CSS rules to add, in order, to a fresh {@code StyleSheet}. */
+    /** The smallest font size ever produced, so text stays readable at the smallest setting. */
+    static final int MIN_POINTS = 6;
+
+    /** CSS rules at the normal size, to add in order to a fresh {@code StyleSheet}. */
     public static List<String> rules(NativeTheme theme) {
+        return rules(theme, FontScaleModel.DEFAULT);
+    }
+
+    /**
+     * CSS rules with every font size scaled by {@code percent}, so headings, code and tables keep
+     * their proportions. At 100 the rules are exactly the normal ones.
+     */
+    public static List<String> rules(NativeTheme theme, int percent) {
         Palette p = palette(theme);
         return List.of(
-                "body { font-family: sans-serif; font-size: 12pt; color: " + p.text()
+                "body { font-family: sans-serif; font-size: " + pt(12, percent) + "pt; color: " + p.text()
                         + "; background-color: " + p.background() + "; margin: 8px; }",
-                "h1 { font-size: 18pt; color: " + p.strong() + "; }",
-                "h2 { font-size: 16pt; color: " + p.strong() + "; }",
-                "h3 { font-size: 14pt; color: " + p.strong() + "; }",
-                "h4, h5, h6 { font-size: 12pt; color: " + p.strong() + "; }",
+                "h1 { font-size: " + pt(18, percent) + "pt; color: " + p.strong() + "; }",
+                "h2 { font-size: " + pt(16, percent) + "pt; color: " + p.strong() + "; }",
+                "h3 { font-size: " + pt(14, percent) + "pt; color: " + p.strong() + "; }",
+                "h4, h5, h6 { font-size: " + pt(12, percent) + "pt; color: " + p.strong() + "; }",
                 "strong, b { color: " + p.strong() + "; }",
                 "em, i { color: " + p.muted() + "; }",
-                "code { font-family: monospaced; font-size: 11pt; background-color: "
+                "code { font-family: monospaced; font-size: " + pt(11, percent) + "pt; background-color: "
                         + p.codeBackground() + "; }",
-                "pre { font-family: monospaced; font-size: 11pt; background-color: "
+                "pre { font-family: monospaced; font-size: " + pt(11, percent) + "pt; background-color: "
                         + p.codeBackground() + "; margin: 4px 0; padding: 4px; }",
                 "blockquote { color: " + p.muted() + "; margin-left: 16px; }",
                 "ul, ol { margin-left: 20px; }",
@@ -57,6 +68,10 @@ public final class MarkdownStyles {
                 "p { margin-top: 4px; margin-bottom: 4px; }",
                 "th { color: " + p.strong() + "; background-color: " + p.codeBackground() + "; }",
                 "td, th { color: " + p.text() + "; }");
+    }
+
+    private static int pt(int base, int percent) {
+        return Math.max(MIN_POINTS, (int) Math.round(base * percent / 100.0));
     }
 
     private static Palette palette(NativeTheme theme) {

@@ -8,16 +8,18 @@ It is built on code reused from the author's ChatStory project (Java 21, Swing, 
 
 ## Status
 
-Early development. DevCycle 001 is in progress: the first five phases are implemented and the manual check against live ChatGPT (Phase 6) is still to do, so nothing is marked Verified.
+DevCycles 1-4 are Verified: every core capability in the plan is in place. DevCycle 5 is ad hoc testing, with two small fixes (a Reset button and an Upload button on the Problems tab).
 
-| Works now | Planned |
-|---|---|
-| Three-pane window with embedded ChatGPT | Problem list with filter and refresh (DC2) |
-| Dark and light themes, remembered between runs | Markdown display of problem, notes and your notes (DC3) |
-| MAIN tab: choose an instructions file and **Send Instructions** | Upload of the selected problem's files (DC4) |
-| Settings saved in `settings.json` | Remaining keyboard shortcuts and polish (DC5) |
+| What it does |
+|---|
+| Three-pane window: your problem and notes on the left, ChatGPT in the middle, controls on the right |
+| **Problems** tab: filter, refresh and select a problem from your PROBLEMS directory |
+| Left pane: the selected problem's statement, supplied notes and your own saved notes, as rendered Markdown, with **+** and **-** buttons to change the text size (remembered between runs) |
+| **Send Instructions** sends your instructions file to ChatGPT. **Reset** recovers if a send gets stuck |
+| **Upload** stages the selected problem's files and opens ChatGPT's file dialog, from the MAIN tab or the Problems tab |
+| Dark and light themes, and all settings, remembered in `settings.json` |
 
-The Problems tab, the left display pane, the Problem panel and the Upload button are placeholders for now. The full design is in `doc/planning/AlgoPrepPlan-Claude02.md`.
+Still to come: more keyboard shortcuts and polish. The full design is in `doc/planning/AlgoPrepPlan-Claude02.md`.
 
 ## Requirements
 
@@ -56,7 +58,15 @@ These work with focus in the browser or in the window.
 | Ctrl+Shift+B | Focus the browser |
 | Ctrl+Shift+X | Reset the app state to Ready (recovery if it gets stuck) |
 
-More shortcuts are planned for DC5.
+The **Reset** button next to **Send Instructions** on the MAIN tab does the same thing as Ctrl+Shift+X. Use it if a send is never confirmed and the app seems stuck: it forces the state back to Ready so Send Instructions and Upload work again. It does not undo anything that was already sent, so check ChatGPT to see whether the message arrived before sending again.
+
+More shortcuts are planned.
+
+### Uploading a problem's files
+
+Select a problem on the **Problems** tab (double-click or Enter), then press **Upload**. There is an Upload button on the MAIN tab and one at the bottom of the Problems tab. They are the same, and both upload the **selected** problem (shown beside the button on the Problems tab), not just the row you have highlighted.
+
+AlgoPrep copies the statement, the supplied notes and your saved notes (the ones that exist) into `<staging directory>\algoprep-upload` and opens ChatGPT's file dialog. In the dialog, press Ctrl+A, then Open, and add a message in ChatGPT if you want one. AlgoPrep never uploads solutions or test cases.
 
 ### DevTools
 

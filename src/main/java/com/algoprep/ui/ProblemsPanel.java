@@ -30,7 +30,7 @@ public class ProblemsPanel extends JPanel {
     private final JList<Problem> list = new JList<>(listModel);
     private final JLabel message = new JLabel(" ");
 
-    public ProblemsPanel(ProblemWorkspace workspace) {
+    public ProblemsPanel(ProblemWorkspace workspace, UploadController uploads) {
         super(new BorderLayout(0, 6));
         this.workspace = workspace;
         setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
@@ -51,7 +51,7 @@ public class ProblemsPanel extends JPanel {
 
         add(top, BorderLayout.NORTH);
         add(new JScrollPane(list), BorderLayout.CENTER);
-        add(message, BorderLayout.SOUTH);
+        add(bottom(workspace.selection(), uploads), BorderLayout.SOUTH);
 
         filterField.getDocument().addDocumentListener(new DocumentListener() {
             @Override public void insertUpdate(DocumentEvent e)  { rebuild(); }
@@ -63,6 +63,28 @@ public class ProblemsPanel extends JPanel {
         workspace.selection().addListener(() -> UiThread.run(list::repaint));
 
         rebuild();
+    }
+
+    /**
+     * The message line, then Upload. Upload is the same one as on the MAIN tab: it uploads the
+     * <em>selected</em> problem, not the row that is merely highlighted, so the selected problem's
+     * name is shown beside it.
+     */
+    private JPanel bottom(SelectedProblemModel selection, UploadController uploads) {
+        JButton upload = new JButton("Upload");
+        uploads.bind(upload);
+
+        JLabel selected = new JLabel(selection.describe());
+        selection.addListener(() -> UiThread.run(() -> selected.setText(selection.describe())));
+
+        JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        row.add(upload);
+        row.add(selected);
+
+        JPanel panel = new JPanel(new BorderLayout(0, 6));
+        panel.add(message, BorderLayout.NORTH);
+        panel.add(row, BorderLayout.CENTER);
+        return panel;
     }
 
     /** Double-click and Enter select the problem. A single click only highlights it. */

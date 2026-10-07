@@ -29,6 +29,7 @@ public final class SettingsStore {
         String stagingRoot;
         NativeTheme theme;
         String lastSelectedKey;
+        Integer fontScalePercent;
     }
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -58,6 +59,8 @@ public final class SettingsStore {
     public synchronized String getHomeDir()          { return data.homeDir; }
     public synchronized String getStagingRoot()      { return data.stagingRoot; }
     public synchronized String getLastSelectedKey()  { return data.lastSelectedKey; }
+    /** The saved display text size in percent, or null if none is saved. */
+    public synchronized Integer getFontScalePercent() { return data.fontScalePercent; }
     public synchronized NativeTheme getTheme()       { return data.theme != null ? data.theme : NativeTheme.DARK; }
 
     /** The saved staging root, or {@code defaultRoot} when none is saved. */
@@ -70,6 +73,7 @@ public final class SettingsStore {
     public void setHomeDir(String v)          { update(() -> data.homeDir = v,          () -> data.homeDir); }
     public void setStagingRoot(String v)      { update(() -> data.stagingRoot = v,      () -> data.stagingRoot); }
     public void setLastSelectedKey(String v)  { update(() -> data.lastSelectedKey = v,  () -> data.lastSelectedKey); }
+    public void setFontScalePercent(int v)    { update(() -> data.fontScalePercent = v,   () -> data.fontScalePercent); }
     public void setTheme(NativeTheme v)       { update(() -> data.theme = v,            () -> data.theme); }
 
     // ---- internals ----
