@@ -75,10 +75,24 @@ public class ProblemsPanel extends JPanel {
         addHierarchyListener(e -> {
             if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && isShowing()) {
                 studied.reload();
+                UiThread.run(this::highlightSelected);
             }
         });
 
         rebuild();
+    }
+
+    /** Highlights (as if clicked) and scrolls to the selected problem's row, if there is one and it is shown. */
+    void highlightSelected() {
+        workspace.selection().selectedKey().ifPresent(key -> {
+            for (int i = 0; i < listModel.size(); i++) {
+                if (listModel.get(i).key().equalsIgnoreCase(key)) {
+                    list.setSelectedIndex(i);
+                    list.ensureIndexIsVisible(i);
+                    return;
+                }
+            }
+        });
     }
 
     /** Double-click and Enter select the problem. A single click only highlights it. */

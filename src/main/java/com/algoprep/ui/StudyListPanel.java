@@ -94,10 +94,24 @@ public class StudyListPanel extends JPanel {
                 workspace.catalog().refresh(); // quietly: no status message each time the tab is shown
                 model.reloadQuietly();
                 studied.reload();
+                UiThread.run(this::highlightSelected);
             }
         });
 
         rebuild();
+    }
+
+    /** Highlights (as if clicked) and scrolls to the selected problem's row, if there is one and it is shown. */
+    void highlightSelected() {
+        workspace.selection().selectedKey().ifPresent(key -> {
+            for (int i = 0; i < listModel.size(); i++) {
+                if (isSelected(listModel.get(i), workspace.selection())) {
+                    list.setSelectedIndex(i);
+                    list.ensureIndexIsVisible(i);
+                    return;
+                }
+            }
+        });
     }
 
     /** Double-click and Enter select the problem. A single click only highlights it. */

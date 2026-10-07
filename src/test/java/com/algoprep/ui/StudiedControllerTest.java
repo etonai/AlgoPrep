@@ -51,6 +51,9 @@ class StudiedControllerTest {
         edt(() -> { });
     }
 
+    private final List<String> questions = new java.util.ArrayList<>();
+    private boolean answer = true;
+
     @BeforeEach
     void setUp() throws Exception {
         Path problems = Files.createDirectories(tmp.resolve("problems"));
@@ -69,7 +72,10 @@ class StudiedControllerTest {
         reporter.attach(status::add);
 
         edt(() -> {
-            controller = new StudiedController(settings, selection, store, reporter);
+            controller = new StudiedController(settings, selection, store, reporter, (parent, message) -> {
+                questions.add(message);
+                return answer;
+            });
             studied1 = new JButton("Studied");
             studied2 = new JButton("Studied");
             clear1 = new JButton("Clear Studied Tag");
@@ -130,9 +136,36 @@ class StudiedControllerTest {
 
         assertEquals(Optional.empty(), store.studiedOn(problem.key()));
         assertEquals(List.of("Cleared the studied tag for 1 - Two Sum."), status);
+        assertEquals(List.of("Clear the studied tag for 1 - Two Sum?"), questions);
         assertFalse(clear1.isEnabled());
         assertFalse(clear2.isEnabled());
         assertEquals("Mark the selected problem as studied today", studied1.getToolTipText());
+    }
+
+    @Test
+    void answeringNoKeepsTheDateAndSaysNothing() throws Exception {
+        select();
+        edt(() -> studied1.doClick());
+        settle();
+        status.clear();
+        answer = false;
+
+        edt(() -> clear1.doClick());
+        settle();
+
+        assertEquals(1, questions.size(), "it asked");
+        assertEquals(Optional.of(LocalDate.of(2026, 10, 7)), store.studiedOn(problem.key()));
+        assertEquals(List.of(), status);
+        assertTrue(clear1.isEnabled());
+    }
+
+    @Test
+    void noQuestionIsAskedWhenThereIsNothingToClear() throws Exception {
+        select();
+        edt(() -> clear1.doClick()); // disabled: doClick does nothing
+        settle();
+
+        assertEquals(List.of(), questions);
     }
 
     @Test

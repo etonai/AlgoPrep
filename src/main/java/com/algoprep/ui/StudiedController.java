@@ -8,6 +8,7 @@ import com.algoprep.studied.StudiedAvailability;
 import com.algoprep.studied.StudiedStore;
 
 import javax.swing.*;
+import java.awt.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -30,8 +31,30 @@ public class StudiedController {
 
     private StudiedAvailability.Result latest;
 
+    /** Asks the user a yes/no question. The parent is the window of the button that was pressed. */
+    @FunctionalInterface
+    public interface Confirmer {
+        boolean confirm(Component parent, String message);
+    }
+
+    /** The real dialog: Yes and No, with No as the default so Enter does not delete a date. */
+    static boolean showDialog(Component parent, String message) {
+        Object[] options = {"Yes", "No"};
+        int answer = JOptionPane.showOptionDialog(parent, message, "Are you sure?",
+                JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
+        return answer == 0;
+    }
+
+    private final Confirmer confirmer;
+
     public StudiedController(SettingsStore settings, SelectedProblemModel selection,
                              StudiedStore store, StatusReporter status) {
+        this(settings, selection, store, status, StudiedController::showDialog);
+    }
+
+    public StudiedController(SettingsStore settings, SelectedProblemModel selection,
+                             StudiedStore store, StatusReporter status, Confirmer confirmer) {
+        this.confirmer = confirmer;
         this.settings = settings;
         this.selection = selection;
         this.store = store;
@@ -53,7 +76,7 @@ public class StudiedController {
 
     /** Attaches a Clear button: pressing it removes the selected problem's studied date. */
     public void bindClear(JButton button) {
-        button.addActionListener(e -> clear());
+        button.addActionListener(e -> clear(button));
         clearButtons.add(button);
         apply();
     }
@@ -80,9 +103,13 @@ public class StudiedController {
         }
     }
 
-    private void clear() {
+    private void clear(JButton source) {
         Optional<String> key = selection.selectedKey();
         if (key.isEmpty() || !latest.canClear()) {
+            return;
+        }
+        String question = "Clear the studied tag for " + ProblemNames.displayForKey(key.get()) + "?";
+        if (!confirmer.confirm(SwingUtilities.getWindowAncestor(source), question)) {
             return;
         }
         if (store.clear(key.get())) {

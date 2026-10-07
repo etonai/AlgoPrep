@@ -113,7 +113,8 @@ class StudyListPanelTest {
             model = new StudyListModel(settings, workspace.catalog(), status::add);
             UploadController uploads = new UploadController(appState, settings, bridge, reporter,
                     workspace.selection(), tmp.resolve("stage").toString());
-            StudiedController controls = new StudiedController(settings, workspace.selection(), studied, reporter);
+            StudiedController controls = new StudiedController(settings, workspace.selection(), studied, reporter,
+                    (p, m) -> true);
             panel = new StudyListPanel(model, workspace, uploads, controls, studied);
             studiedButton = find(panel, "Studied");
             clearButton = find(panel, "Clear Studied Tag");
@@ -231,6 +232,45 @@ class StudyListPanelTest {
         settle();
 
         assertTrue(panel.rowTexts().get(0).contains("(selected)"));
+    }
+
+    private int indexHighlightedAfterOpeningTheTab() throws Exception {
+        JFrame[] frame = new JFrame[1];
+        try {
+            edt(() -> {
+                JTabbedPane host = new JTabbedPane();
+                host.addTab("Other", new JPanel());
+                host.addTab("Grind75", panel);
+                frame[0] = new JFrame();
+                frame[0].add(host);
+                frame[0].setSize(400, 500);
+                frame[0].setVisible(true);
+                host.setSelectedIndex(1);
+            });
+            settle();
+            settle();
+            int[] index = new int[1];
+            edt(() -> index[0] = list().getSelectedIndex());
+            return index[0];
+        } finally {
+            edt(() -> frame[0].dispose());
+        }
+    }
+
+    @Test
+    void openingTheTabHighlightsTheSelectedProblem() throws Exception {
+        edt(() -> workspace.selection().select(workspace.catalog().problems().get(1)));
+        settle();
+
+        assertEquals(2,indexHighlightedAfterOpeningTheTab(), "0099 is the third row");
+        assertEquals("0099_no-difficulty", workspace.selection().selectedKey().orElseThrow(),
+                "highlighting does not change the selection");
+    }
+
+    @Test
+    void openingTheTabWithNothingSelectedHighlightsNothing() throws Exception {
+        assertEquals(-1, indexHighlightedAfterOpeningTheTab());
+        assertTrue(workspace.selection().selectedKey().isEmpty());
     }
 
     @Test
