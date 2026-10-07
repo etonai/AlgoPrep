@@ -1,5 +1,7 @@
 package com.algoprep.studied;
 
+import com.algoprep.csv.CsvLine;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
@@ -10,7 +12,6 @@ import java.nio.file.StandardCopyOption;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -197,7 +198,7 @@ public final class StudiedStore {
             if (line.isBlank()) {
                 continue;
             }
-            List<String> fields = parseLine(line);
+            List<String> fields = CsvLine.parse(line);
             if (isHeader(fields)) {
                 continue;
             }
@@ -240,40 +241,6 @@ public final class StudiedStore {
         } catch (DateTimeParseException e) {
             return null;
         }
-    }
-
-    /** Splits one CSV line, honoring double quotes. Returns null for an unbalanced quote. */
-    static List<String> parseLine(String line) {
-        List<String> fields = new ArrayList<>();
-        StringBuilder current = new StringBuilder();
-        boolean quoted = false;
-        for (int i = 0; i < line.length(); i++) {
-            char c = line.charAt(i);
-            if (quoted) {
-                if (c == '"') {
-                    if (i + 1 < line.length() && line.charAt(i + 1) == '"') {
-                        current.append('"');
-                        i++;
-                    } else {
-                        quoted = false;
-                    }
-                } else {
-                    current.append(c);
-                }
-            } else if (c == '"' && current.length() == 0) {
-                quoted = true;
-            } else if (c == ',') {
-                fields.add(current.toString());
-                current.setLength(0);
-            } else {
-                current.append(c);
-            }
-        }
-        if (quoted) {
-            return null;
-        }
-        fields.add(current.toString());
-        return fields;
     }
 
     private void preserveBad(Path path) {

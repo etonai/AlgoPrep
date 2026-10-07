@@ -58,7 +58,8 @@ public class ProblemsPanel extends JPanel {
 
         add(top, BorderLayout.NORTH);
         add(new JScrollPane(list), BorderLayout.CENTER);
-        add(bottom(workspace.selection(), uploads, studiedControls), BorderLayout.SOUTH);
+        add(SelectionActions.build(message, workspace.selection(), uploads, studiedControls),
+                BorderLayout.SOUTH);
 
         filterField.getDocument().addDocumentListener(new DocumentListener() {
             @Override public void insertUpdate(DocumentEvent e)  { rebuild(); }
@@ -78,41 +79,6 @@ public class ProblemsPanel extends JPanel {
         });
 
         rebuild();
-    }
-
-    /**
-     * The message line, then Upload, Studied and Clear. They are the same ones as on the MAIN tab:
-     * they act on the <em>selected</em> problem, not the row that is merely highlighted, so the
-     * selected problem's name is shown below them.
-     */
-    private JPanel bottom(SelectedProblemModel selection, UploadController uploads,
-                          StudiedController studiedControls) {
-        JButton upload = new JButton("Upload");
-        uploads.bind(upload);
-        JButton studiedButton = new JButton("Studied");
-        studiedControls.bindStudied(studiedButton);
-        JButton clearButton = new JButton("Clear Studied Tag");
-        studiedControls.bindClear(clearButton);
-
-        JLabel selected = new JLabel(selection.describe());
-        selection.addListener(() -> UiThread.run(() -> selected.setText(selection.describe())));
-
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
-        buttons.add(upload);
-        buttons.add(studiedButton);
-        buttons.add(clearButton);
-
-        JPanel selectedRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
-        selectedRow.add(selected);
-
-        JPanel rows = new JPanel(new BorderLayout(0, 4));
-        rows.add(buttons, BorderLayout.NORTH);
-        rows.add(selectedRow, BorderLayout.CENTER);
-
-        JPanel panel = new JPanel(new BorderLayout(0, 6));
-        panel.add(message, BorderLayout.NORTH);
-        panel.add(rows, BorderLayout.CENTER);
-        return panel;
     }
 
     /** Double-click and Enter select the problem. A single click only highlights it. */

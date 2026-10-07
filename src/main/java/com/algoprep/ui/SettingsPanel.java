@@ -39,7 +39,11 @@ public class SettingsPanel extends JPanel {
             /** A reason to refuse a chosen directory, or empty to accept it. */
             Function<Path, Optional<String>> refuse,
             /** Returns to the default. Null if the setting has no default. */
-            Runnable useDefault) { }
+            Runnable useDefault,
+            /** True to choose a file instead of a folder. */
+            boolean chooseFile,
+            /** Removes the setting. Null if the setting cannot be cleared. */
+            Runnable clear) { }
 
     public SettingsPanel(NativeThemeModel themeModel, ProblemWorkspace workspace,
                          SettingsStore settings, String defaultStagingRoot) {
@@ -64,7 +68,7 @@ public class SettingsPanel extends JPanel {
                 refresh -> workspace.catalog().addListener(() -> UiThread.run(refresh)),
                 notFoundWarning,
                 dir -> Optional.empty(),
-                null)));
+                null, false, null)));
         content.add(Box.createVerticalStrut(16));
         content.add(sectionLabel("HOME directory (your saved notes)"));
         content.add(directoryControls(new DirectorySpec(
@@ -76,7 +80,7 @@ public class SettingsPanel extends JPanel {
                 refresh -> settings.addListener(() -> UiThread.run(refresh)),
                 notFoundWarning,
                 dir -> Optional.empty(),
-                null)));
+                null, false, null)));
         content.add(Box.createVerticalStrut(16));
         content.add(sectionLabel("Upload staging directory"));
         content.add(directoryControls(new DirectorySpec(
@@ -90,7 +94,20 @@ public class SettingsPanel extends JPanel {
                 // The directory itself need not exist: it is created at the first upload
                 text -> stagingProblem(settings, text),
                 dir -> StagingFolder.validateRoot(dir, settings.getProblemsDir(), settings.getHomeDir()),
-                () -> settings.setStagingRoot(null))));
+                () -> settings.setStagingRoot(null), false, null)));
+        content.add(Box.createVerticalStrut(16));
+        content.add(sectionLabel("Study List File (optional)"));
+        content.add(directoryControls(new DirectorySpec(
+                "Select Study List File",
+                settings::getStudyListFile,
+                null,
+                file -> settings.setStudyListFile(file.toString()),
+                refresh -> settings.addListener(() -> UiThread.run(refresh)),
+                SettingsPanel::studyListProblem,
+                file -> Optional.empty(),
+                null, true, () -> settings.setStudyListFile(null))));
+        content.add(hintLabel("A CSV with one problem per line: key, difficulty, time. "
+                + "Adds a tab with the problems in the file's order."));
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
@@ -100,6 +117,24 @@ public class SettingsPanel extends JPanel {
         gbc.anchor = GridBagConstraints.NORTHWEST;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         add(content, gbc);
+    }
+
+    private static Optional<String> studyListProblem(String text) {
+        try {
+            Path file = Path.of(text);
+            if (Files.isDirectory(file)) {
+                return Optional.of("Warning: this is a folder, not a file.");
+            }
+            if (!Files.exists(file)) {
+                return Optional.of("Warning: this file was not found.");
+            }
+            if (!Files.isReadable(file)) {
+                return Optional.of("Warning: this file cannot be read.");
+            }
+            return Optional.empty();
+        } catch (RuntimeException e) {
+            return Optional.of("Warning: this is not a valid path.");
+        }
     }
 
     private static boolean isDefaultStaging(SettingsStore settings) {
@@ -114,6 +149,13 @@ public class SettingsPanel extends JPanel {
         } catch (RuntimeException e) {
             return Optional.of("Warning: this is not a valid path.");
         }
+    }
+
+    private JLabel hintLabel(String text) {
+        JLabel label = new JLabel("<html><body style='width: 250px'>" + MarkdownConverter.escape(text) + "</body></html>");
+        label.setFont(label.getFont().deriveFont(Font.PLAIN, 11f));
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return label;
     }
 
     private JLabel sectionLabel(String text) {
@@ -178,10 +220,19 @@ public class SettingsPanel extends JPanel {
         browse.addActionListener(e -> {
             JFileChooser chooser = new JFileChooser();
             chooser.setDialogTitle(spec.dialogTitle());
-            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            chooser.setFileSelectionMode(spec.chooseFile()
+                    ? JFileChooser.FILES_ONLY : JFileChooser.DIRECTORIES_ONLY);
             String current = spec.currentText().get();
-            if (current != null && !current.isBlank() && isDirectory(current)) {
-                chooser.setCurrentDirectory(new File(current));
+            if (current != null && !current.isBlank()) {
+                File start = new File(current);
+                // For a file setting, open in the file's folder
+                File folder = spec.chooseFile() ? start.getParentFile() : start;
+                if (folder != null && folder.isDirectory()) {
+                    chooser.setCurrentDirectory(folder);
+                }
+            }
+            if (spec.chooseFile()) {
+                chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("CSV files", "csv"));
             }
             if (chooser.showOpenDialog(SettingsPanel.this) != JFileChooser.APPROVE_OPTION) return;
             Path chosen = chooser.getSelectedFile().toPath().toAbsolutePath();
@@ -201,6 +252,12 @@ public class SettingsPanel extends JPanel {
             useDefault.setToolTipText("Go back to the default folder");
             useDefault.addActionListener(e -> spec.useDefault().run());
             buttons.add(useDefault);
+        }
+        if (spec.clear() != null) {
+            JButton clear = new JButton("Clear");
+            clear.setToolTipText("Remove this setting");
+            clear.addActionListener(e -> spec.clear().run());
+            buttons.add(clear);
         }
 
         return verticalPanel(pathLabel, warningLabel, buttons);

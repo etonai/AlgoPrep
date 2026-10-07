@@ -18,6 +18,7 @@ DevCycles 1-4 are Verified: every core capability in the plan is in place. DevCy
 | **Send Instructions** sends your instructions file to ChatGPT. **Reset** recovers if a send gets stuck |
 | **Upload** stages the selected problem's files and opens ChatGPT's file dialog, from the MAIN tab or the Problems tab |
 | **Studied** records today's date for the selected problem, and the Problems list shows `(STUDIED 2026-10-07)` on it. **Clear Studied Tag** removes it |
+| An optional **study list** (a CSV such as `Grind75.csv`) adds a tab listing those problems in the file's order, with difficulty and time. Set it in Settings |
 | Dark and light themes, and all settings, remembered in `settings.json` |
 
 Still to come: more keyboard shortcuts and polish. The full design is in `doc/planning/AlgoPrepPlan-Claude02.md`.
@@ -74,6 +75,31 @@ AlgoPrep copies the statement, the supplied notes and your saved notes (the ones
 Select a problem and press **Studied** after you have successfully studied it. There is a Studied button (with **Clear Studied Tag**) on the MAIN tab next to Upload, and one at the bottom of the Problems tab. They are the same, and both act on the **selected** problem. Studied records today's date, and pressing it again later replaces the date. Only the last date is kept. The Problems list then shows `(STUDIED 2026-10-07)` on that row, and a large light gray `STUDIED 2026-10-07` banner appears at the top of the **Problem** tab in the display window while that problem is selected. **Clear Studied Tag** removes the date if you pressed Studied by mistake.
 
 The dates are kept in `AlgoPrep_studied.csv` in your **HOME** directory, next to your notes, so the buttons need HOME to be set. It is a plain file with one `key,date` row per problem, and you can edit it by hand. **Refresh**, or switching to the Problems tab, re-reads it. If it cannot be read at all it is renamed to `AlgoPrep_studied.csv.bad` and AlgoPrep starts with no dates. This is the only file AlgoPrep writes in HOME. Your notes are never changed.
+
+### Study lists
+
+In **Settings**, the optional **Study List File** setting takes a CSV file. When it is set, a tab titled with the file's name (`Grind75.csv` gives `Grind75`) appears after **Problems**. Clear the setting and the tab goes away. The tab works like the Problems tab: filter, Refresh, double-click or Enter to select, and the same Upload, Studied and Clear Studied Tag buttons. Rows keep the file's order and show the same `(selected)` and `(STUDIED date)` tags. AlgoPrep only reads the file, it never changes it.
+
+The file has one problem per line, `key, difficulty, time`. The difficulty and time are free text and optional. Blank lines and lines starting with `#` are ignored. A first line naming the columns (`problem,difficulty,time`) is skipped, so a file saved from a spreadsheet works as is:
+
+```
+problem,difficulty,time
+0001_two-sum, Easy, 20 minutes
+15_not-found, Tough, 15 minutes
+99_no-difficulty, , 2 minutes
+105_no-time, Medium,
+```
+
+A key is matched to a problem in the PROBLEMS directory by its number and name, so `99_no-difficulty` finds `0099_no-difficulty` and you do not have to pad the numbers. Rows show as:
+
+```
+1 - Two Sum, Easy, 20 minutes
+15_not-found, Tough, 15 minutes - NOT FOUND
+99 - No Difficulty, 2 minutes
+105 - No Time, Medium
+```
+
+A problem with no files in the PROBLEMS directory is shown as NOT FOUND and cannot be selected. The line under the list says how many problems are in it, how many are studied, and how many were not found. **Refresh**, or switching to the tab, re-reads the file. If the file cannot be read, the tab still appears and says why.
 
 ### DevTools
 

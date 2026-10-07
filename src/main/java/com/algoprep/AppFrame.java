@@ -6,6 +6,8 @@ import com.algoprep.config.SettingsStore;
 import com.algoprep.display.FontScaleModel;
 import com.algoprep.problem.ProblemWorkspace;
 import com.algoprep.studied.StudiedStore;
+import com.algoprep.studylist.StudyListModel;
+import com.algoprep.studylist.StudyListTitle;
 import com.algoprep.theme.NativeThemeApplier;
 import com.algoprep.theme.NativeThemeModel;
 import com.algoprep.ui.DisplayPanel;
@@ -14,6 +16,7 @@ import com.algoprep.ui.ProblemsPanel;
 import com.algoprep.ui.SettingsPanel;
 import com.algoprep.ui.StatusReporter;
 import com.algoprep.ui.StudiedController;
+import com.algoprep.ui.StudyListPanel;
 import com.algoprep.ui.UploadController;
 import org.cef.browser.CefBrowser;
 
@@ -70,6 +73,15 @@ public class AppFrame extends JFrame {
                 problems.selection(), uploads, studiedControls));
         rightTabs.addTab("Problems", new ProblemsPanel(problems, uploads, studiedControls, studied));
         rightTabs.addTab("Settings", new SettingsPanel(themeModel, problems, settings, defaultStagingRoot));
+
+        // The study list tab exists only while a Study List File is set. It sits after Problems.
+        StudyListModel studyList = new StudyListModel(settings, problems.catalog(), statusReporter::report);
+        StudyListPanel studyListPanel = new StudyListPanel(studyList, problems, uploads, studiedControls, studied);
+        // A tab added later has missed every theme apply so far (the applier recolors only what is in
+        // the window), so adding it re-applies the current theme
+        studyList.addListener(() -> UiThread.run(() -> syncStudyListTab(rightTabs, studyList, studyListPanel,
+                () -> themeApplier.apply(this, themeModel.current()))));
+        syncStudyListTab(rightTabs, studyList, studyListPanel, () -> { }); // the theme is applied once the window is shown
 
         JButton devToolsBtn = new JButton("DevTools");
         devToolsBtn.setToolTipText("Open Chromium DevTools for this page");
@@ -128,6 +140,41 @@ public class AppFrame extends JFrame {
 
         setVisible(true);
         UiThread.run(() -> themeApplier.apply(this, themeModel.current()));
+    }
+
+    /**
+     * Adds, retitles or removes the study list tab to match the model. The user's current tab stays
+     * selected, unless it is the one removed, in which case Problems is selected.
+     *
+     * @param onAdded runs after the tab was newly inserted, so the caller can apply the current
+     *                theme to it: {@code NativeThemeApplier} recolors only the components that are in
+     *                the window when it runs, so a tab inserted later would otherwise stay unthemed
+     */
+    public static void syncStudyListTab(JTabbedPane tabs, StudyListModel model, StudyListPanel panel,
+                                        Runnable onAdded) {
+        int index = tabs.indexOfComponent(panel);
+        if (!model.isActive()) {
+            if (index >= 0) {
+                if (tabs.getSelectedIndex() == index) {
+                    tabs.setSelectedIndex(1); // Problems
+                }
+                tabs.removeTabAt(tabs.indexOfComponent(panel));
+            }
+            return;
+        }
+        String title = model.title().orElse("Study List");
+        String label = StudyListTitle.tabLabel(title);
+        if (index < 0) {
+            java.awt.Component selected = tabs.getSelectedComponent();
+            tabs.insertTab(label, null, panel, title, 2); // after MAIN and Problems, before Settings
+            if (selected != null) {
+                tabs.setSelectedComponent(selected);
+            }
+            onAdded.run();
+        } else {
+            tabs.setTitleAt(index, label);
+            tabs.setToolTipTextAt(index, title);
+        }
     }
 
     private void installKeyboardShortcuts(Map<Integer, Runnable> shortcuts) {

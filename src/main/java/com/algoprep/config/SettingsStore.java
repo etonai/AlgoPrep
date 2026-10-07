@@ -30,6 +30,7 @@ public final class SettingsStore {
         NativeTheme theme;
         String lastSelectedKey;
         Integer fontScalePercent;
+        String studyListFile;
     }
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -59,6 +60,8 @@ public final class SettingsStore {
     public synchronized String getHomeDir()          { return data.homeDir; }
     public synchronized String getStagingRoot()      { return data.stagingRoot; }
     public synchronized String getLastSelectedKey()  { return data.lastSelectedKey; }
+    /** The optional study list CSV file, or null if none is set. */
+    public synchronized String getStudyListFile()    { return data.studyListFile; }
     /** The saved display text size in percent, or null if none is saved. */
     public synchronized Integer getFontScalePercent() { return data.fontScalePercent; }
     public synchronized NativeTheme getTheme()       { return data.theme != null ? data.theme : NativeTheme.DARK; }
@@ -73,6 +76,7 @@ public final class SettingsStore {
     public void setHomeDir(String v)          { update(() -> data.homeDir = v,          () -> data.homeDir); }
     public void setStagingRoot(String v)      { update(() -> data.stagingRoot = v,      () -> data.stagingRoot); }
     public void setLastSelectedKey(String v)  { update(() -> data.lastSelectedKey = v,  () -> data.lastSelectedKey); }
+    public void setStudyListFile(String v)    { update(() -> data.studyListFile = v,    () -> data.studyListFile); }
     public void setFontScalePercent(int v)    { update(() -> data.fontScalePercent = v,   () -> data.fontScalePercent); }
     public void setTheme(NativeTheme v)       { update(() -> data.theme = v,            () -> data.theme); }
 

@@ -320,12 +320,4 @@ class StudiedStoreTest {
         assertEquals(1, status.size());
         assertTrue(status.get(0).startsWith("Could not save"), status.get(0));
     }
-
-    @Test
-    void parseLineHandlesQuotes() {
-        assertEquals(List.of("a", "b"), StudiedStore.parseLine("a,b"));
-        assertEquals(List.of("a,b", "c"), StudiedStore.parseLine("\"a,b\",c"));
-        assertEquals(List.of("say \"hi\"", "c"), StudiedStore.parseLine("\"say \"\"hi\"\"\",c"));
-        assertNull(StudiedStore.parseLine("\"open,c"));
-    }
 }
