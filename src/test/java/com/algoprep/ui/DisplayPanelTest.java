@@ -3,6 +3,7 @@ package com.algoprep.ui;
 import com.algoprep.config.SettingsStore;
 import com.algoprep.display.FontScaleModel;
 import com.algoprep.problem.SelectedProblemModel;
+import com.algoprep.studied.StudiedStore;
 import com.algoprep.theme.NativeThemeModel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,7 +48,8 @@ class DisplayPanelTest {
     private void build() throws Exception {
         SettingsStore settings = new SettingsStore(tmp.resolve("settings.json"), m -> { });
         edt(() -> {
-            panel = new DisplayPanel(new SelectedProblemModel(), settings, new NativeThemeModel(), scale);
+            panel = new DisplayPanel(new SelectedProblemModel(), settings, new NativeThemeModel(), scale,
+                    new StudiedStore(java.time.Clock.systemDefaultZone(), m -> { }));
             smaller = find(panel, "-");
             larger = find(panel, "+");
         });

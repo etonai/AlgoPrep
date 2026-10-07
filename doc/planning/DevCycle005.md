@@ -1,8 +1,8 @@
 # DevCycle 005: Ad Hoc Testing and Fixes
 
-**Status:** In Progress
+**Status:** Work Complete
 **Start Date:** 2026-10-06
-**Target Completion:** Open-ended. This cycle closes when the user says testing is done.
+**Target Completion:** 2026-10-07 (closed by the user)
 **Focus:** Use AlgoPrep for real and record everything the user wants changed, make the specific changes the user asks for (a Reset button, an Upload button on the Problems tab, and display font-size buttons), and test in between.
 
 ---
@@ -126,13 +126,15 @@ One change the user has asked for (Findings Log #3). Nothing else is built in th
 
 ### Phase 5: More Testing
 
-**Status:** Planning
+**Status:** Work Complete
 
 - [ ] Try the **+** and **-** buttons on real problem files and your own notes: both themes, long code lines, tables, a long problem scrolled halfway down, pressing the buttons several times quickly, and restarting to see that the size is remembered.
 - [ ] Carry on using AlgoPrep for real sessions, and record every finding in the Findings Log.
 - [ ] Triage the full log (Fix, Defer or Drop) when the user decides testing is done.
 
 **Technical Notes:**
+Phase 5 was closed when the user declared the cycle complete on 2026-10-07. The checklist items above were not individually recorded, so they are left unticked.
+
 Same suggested areas as Phase 1, plus the text size: whether the step and the range feel right, whether the buttons are easy to find, whether the size should apply to anything else, and whether a keyboard or mouse-wheel zoom is missed (Open Question 4 of Phase 4 left that out). Anything accepted at triage becomes input for the next cycle, not work in this one, unless the user says otherwise.
 
 ---
@@ -230,19 +232,20 @@ The change is implemented. The full build passes with 290 tests and 0 failures (
 
 ## Completion Summary
 
-*Fill in when the cycle closes. Move this document to `doc/planning/completed/` afterward.*
-
-**Completion Date:** [YYYY-MM-DD]
-**Phases Completed:** [List or "All"]
-**Work Deferred:** [What was not done and why, or "None"]
+**Completion Date:** 2026-10-07
+**Phases Completed:** All (1-5). Phases 1, 2, 4 and 5 are Work Complete, and Phase 3 is Verified. The cycle is Work Complete, pending the user's Verified.
+**Work Deferred:** The carried-in items above were not triaged one by one and stay open for a future cycle (shortcuts, the status line replacing messages, the stale "Instructions sent" indicator, the Markdown inline-code spacing, the Settings warning color, automatic file selection in the dialog, housekeeping, and the Plan's deferred ideas). The cause of the unconfirmed send (Finding 1) was never investigated.
 
 **Accomplishments:**
-- [What was learned, decided or built]
+- Used AlgoPrep for real sessions, and logged three findings, all acted on
+- **Reset** button beside Send Instructions (Finding 1)
+- **Upload** button on the Problems tab, sharing one implementation with the MAIN tab (Finding 2)
+- **+** and **-** text-size buttons for the display window, remembered between runs (Finding 3)
 
 **Metrics:**
-- Findings logged: [N]
-- Triage result: [N fix / N defer / N drop]
-- Tests passing: [N]
+- Findings logged: 3
+- Triage result: 3 fixed / 0 deferred / 0 dropped (the carried-in items were deferred, not triaged)
+- Tests passing: 290 at the end of Phase 4 (the suite is now 337 after DevCycle 6)
 
 **Lessons / Notes:**
-[Anything worth remembering for future cycles.]
+The font-size buttons (Finding 3) are marked "Fixed (not yet tried by the user)" in the log, and nothing later contradicts that. DevCycle 6 (studied tracking) was planned and finished while this cycle was still open. DC5 has not been moved to `doc/planning/completed/`, and the user has not marked it Verified.

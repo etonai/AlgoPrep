@@ -5,16 +5,20 @@ import com.algoprep.config.SettingsStore;
 import com.algoprep.display.DocumentLoader;
 import com.algoprep.display.FontScaleModel;
 import com.algoprep.problem.SelectedProblemModel;
+import com.algoprep.studied.StudiedLabel;
+import com.algoprep.studied.StudiedStore;
 import com.algoprep.theme.NativeThemeModel;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Left pane (Plan section 7): three fixed, read-only tabs, Problem, Notes and My Notes, each
  * showing a file as rendered Markdown or a short message. A small bar above the tabs has + and -
- * buttons that change the text size of all three tabs together.
+ * buttons that change the text size of all three tabs together. When the selected problem has a
+ * studied date, a large STUDIED banner is shown at the top of the Problem tab.
  *
  * <p>Files are re-read when the selection changes and whenever a tab is selected, so edits made in
  * another editor appear without a file watcher. Reading happens on the Swing thread: the files
@@ -30,6 +34,8 @@ public class DisplayPanel extends JPanel {
     private final SelectedProblemModel selection;
     private final SettingsStore settings;
     private final FontScaleModel fontScale;
+    private final StudiedStore studied;
+    private final JLabel studiedLabel = new StudiedBanner();
     private final JTabbedPane tabs = new JTabbedPane();
     private final MarkdownView[] views;
     private final JButton smaller = new JButton("-");
@@ -37,17 +43,19 @@ public class DisplayPanel extends JPanel {
     private String lastHome;
 
     public DisplayPanel(SelectedProblemModel selection, SettingsStore settings,
-                        NativeThemeModel themeModel, FontScaleModel fontScale) {
+                        NativeThemeModel themeModel, FontScaleModel fontScale,
+                        StudiedStore studied) {
         super(new BorderLayout());
         this.selection = selection;
         this.settings = settings;
         this.fontScale = fontScale;
+        this.studied = studied;
         // One scale model for all three views, so the tabs always share a size
         this.views = new MarkdownView[] {
                 new MarkdownView(themeModel, fontScale),
                 new MarkdownView(themeModel, fontScale),
                 new MarkdownView(themeModel, fontScale)};
-        tabs.addTab("Problem", views[PROBLEM]);
+        tabs.addTab("Problem", problemTab());
         tabs.addTab("Notes", views[NOTES]);
         tabs.addTab("My Notes", views[MY_NOTES]);
 
@@ -55,12 +63,24 @@ public class DisplayPanel extends JPanel {
         add(tabs, BorderLayout.CENTER);
 
         selection.addListener(() -> UiThread.run(this::reloadAll));
+        selection.addListener(() -> UiThread.run(this::updateStudiedLabel));
+        studied.addListener(() -> UiThread.run(this::updateStudiedLabel));
         settings.addListener(() -> UiThread.run(this::onSettingsChanged));
         // Re-read the file for whichever tab the user switches to
         tabs.addChangeListener(e -> reload(tabs.getSelectedIndex()));
 
         lastHome = settings.getHomeDir();
         reloadAll();
+        updateStudiedLabel();
+    }
+
+    /** The STUDIED banner above the statement. It takes no space while the problem is not studied. */
+    private JPanel problemTab() {
+        studiedLabel.setToolTipText("The date this problem was last marked as studied");
+        JPanel tab = new JPanel(new BorderLayout());
+        tab.add(studiedLabel, BorderLayout.NORTH);
+        tab.add(views[PROBLEM], BorderLayout.CENTER);
+        return tab;
     }
 
     /** The + and - buttons, right-aligned above the tabs so they show whichever tab is open. */
@@ -79,6 +99,13 @@ public class DisplayPanel extends JPanel {
         bar.add(smaller);
         bar.add(larger);
         return bar;
+    }
+
+    /** Shows the studied date of the selected problem, or hides the banner. Works by key, so it also shows when the statement is gone. */
+    private void updateStudiedLabel() {
+        Optional<String> text = StudiedLabel.text(selection.selectedKey().flatMap(studied::studiedOn));
+        studiedLabel.setText(text.orElse(""));
+        studiedLabel.setVisible(text.isPresent());
     }
 
     /** Disables a button at its limit, and shows the current size in the tooltips. */
@@ -118,5 +145,24 @@ public class DisplayPanel extends JPanel {
         } else {
             views[tab].showMessage(doc.message());
         }
+    }
+
+    /**
+     * Large and easy to notice, in dark text on light gray. It fixes its own colors, because the theme applier
+     * recolors every label to the muted text color, which would make it vanish.
+     */
+    private static final class StudiedBanner extends JLabel {
+        private static final Color BACKGROUND = new Color(217, 217, 217);
+        private static final Color TEXT = new Color(34, 34, 34);
+
+        StudiedBanner() {
+            setFont(getFont().deriveFont(Font.BOLD, 22f));
+            setHorizontalAlignment(SwingConstants.CENTER);
+            setBorder(BorderFactory.createEmptyBorder(10, 6, 10, 6));
+            setOpaque(true);
+        }
+
+        @Override public Color getForeground() { return TEXT; }
+        @Override public Color getBackground() { return BACKGROUND; }
     }
 }

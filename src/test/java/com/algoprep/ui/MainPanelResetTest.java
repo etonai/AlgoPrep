@@ -5,6 +5,7 @@ import com.algoprep.bridge.ChatBridge;
 import com.algoprep.bridge.ResponseListener;
 import com.algoprep.config.SettingsStore;
 import com.algoprep.problem.SelectedProblemModel;
+import com.algoprep.studied.StudiedStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -75,7 +76,9 @@ class MainPanelResetTest {
         edt(() -> {
             UploadController uploads = new UploadController(appState, settings, bridge, reporter,
                     selection, tmp.resolve("stage").toString());
-            panel = new MainPanel(appState, settings, bridge, reporter, selection, uploads);
+            StudiedStore studied = new StudiedStore(java.time.Clock.systemDefaultZone(), m -> { });
+            StudiedController studiedControls = new StudiedController(settings, selection, studied, reporter);
+            panel = new MainPanel(appState, settings, bridge, reporter, selection, uploads, studiedControls);
             send = find(panel, "Send Instructions");
             reset = find(panel, "Reset");
         });

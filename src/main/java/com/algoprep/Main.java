@@ -9,6 +9,7 @@ import com.algoprep.config.AppConfig;
 import com.algoprep.config.SettingsStore;
 import com.algoprep.display.FontScaleModel;
 import com.algoprep.problem.ProblemWorkspace;
+import com.algoprep.studied.StudiedStore;
 import com.algoprep.theme.NativeThemeModel;
 import com.algoprep.ui.StatusReporter;
 import me.friwi.jcefmaven.CefAppBuilder;
@@ -20,6 +21,7 @@ import org.cef.browser.CefBrowser;
 import javax.swing.*;
 import java.io.File;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -46,6 +48,11 @@ public class Main {
 
         // Scans the saved PROBLEMS directory and restores the last selection, if still found
         ProblemWorkspace problems = new ProblemWorkspace(settings, statusReporter::report);
+
+        // The studied dates live in the HOME directory and follow the HOME setting
+        StudiedStore studied = new StudiedStore(Clock.systemDefaultZone(), statusReporter::report);
+        studied.setFile(StudiedStore.fileFor(settings.getHomeDir()).orElse(null));
+        settings.addListener(() -> studied.setFile(StudiedStore.fileFor(settings.getHomeDir()).orElse(null)));
 
         System.out.println("AlgoPrep starting...");
         System.out.println("  Profile  : " + config.getProfilePath());
@@ -91,7 +98,7 @@ public class Main {
         ChatGptBridge chatBridge    = new ChatGptBridge(domBridge, browser, appState);
 
         SwingUtilities.invokeLater(() ->
-                new AppFrame(appState, browserPanel, browser, chatBridge, settings, problems,
+                new AppFrame(appState, browserPanel, browser, chatBridge, settings, problems, studied,
                         config.getDefaultStagingRootPath(), themeModel, fontScale,
                         statusReporter, browserShortcuts));
     }

@@ -4,8 +4,10 @@ import com.algoprep.UiThread;
 import com.algoprep.problem.Problem;
 import com.algoprep.problem.ProblemCatalog;
 import com.algoprep.problem.ProblemFilter;
+import com.algoprep.problem.ProblemRowText;
 import com.algoprep.problem.ProblemWorkspace;
 import com.algoprep.problem.SelectedProblemModel;
+import com.algoprep.studied.StudiedStore;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -14,6 +16,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
+import java.awt.event.HierarchyEvent;
 import java.awt.event.MouseEvent;
 import java.util.List;
 
@@ -30,7 +33,8 @@ public class ProblemsPanel extends JPanel {
     private final JList<Problem> list = new JList<>(listModel);
     private final JLabel message = new JLabel(" ");
 
-    public ProblemsPanel(ProblemWorkspace workspace, UploadController uploads) {
+    public ProblemsPanel(ProblemWorkspace workspace, UploadController uploads,
+                         StudiedController studiedControls, StudiedStore studied) {
         super(new BorderLayout(0, 6));
         this.workspace = workspace;
         setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
@@ -38,7 +42,10 @@ public class ProblemsPanel extends JPanel {
         filterField.setToolTipText("Filter by number or name");
         JButton refresh = new JButton("Refresh");
         refresh.setToolTipText("Rescan the PROBLEMS directory");
-        refresh.addActionListener(e -> workspace.refresh());
+        refresh.addActionListener(e -> {
+            workspace.refresh();
+            studied.reload(); // picks up hand edits to the studied file
+        });
 
         JPanel top = new JPanel(new BorderLayout(6, 0));
         top.add(new JLabel("Filter:"), BorderLayout.WEST);
@@ -46,12 +53,12 @@ public class ProblemsPanel extends JPanel {
         top.add(refresh, BorderLayout.EAST);
 
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        list.setCellRenderer(new RowRenderer(workspace.selection()));
+        list.setCellRenderer(new RowRenderer(workspace.selection(), studied));
         installActivation();
 
         add(top, BorderLayout.NORTH);
         add(new JScrollPane(list), BorderLayout.CENTER);
-        add(bottom(workspace.selection(), uploads), BorderLayout.SOUTH);
+        add(bottom(workspace.selection(), uploads, studiedControls), BorderLayout.SOUTH);
 
         filterField.getDocument().addDocumentListener(new DocumentListener() {
             @Override public void insertUpdate(DocumentEvent e)  { rebuild(); }
@@ -61,29 +68,50 @@ public class ProblemsPanel extends JPanel {
         workspace.catalog().addListener(() -> UiThread.run(this::rebuild));
         // Repaint so the "selected" marker follows the selection model, wherever it was changed
         workspace.selection().addListener(() -> UiThread.run(list::repaint));
+        // Repaint so the STUDIED tags follow the studied file. Reload it whenever the tab is shown,
+        // so edits made outside AlgoPrep appear without a file watcher.
+        studied.addListener(() -> UiThread.run(list::repaint));
+        addHierarchyListener(e -> {
+            if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && isShowing()) {
+                studied.reload();
+            }
+        });
 
         rebuild();
     }
 
     /**
-     * The message line, then Upload. Upload is the same one as on the MAIN tab: it uploads the
-     * <em>selected</em> problem, not the row that is merely highlighted, so the selected problem's
-     * name is shown beside it.
+     * The message line, then Upload, Studied and Clear. They are the same ones as on the MAIN tab:
+     * they act on the <em>selected</em> problem, not the row that is merely highlighted, so the
+     * selected problem's name is shown below them.
      */
-    private JPanel bottom(SelectedProblemModel selection, UploadController uploads) {
+    private JPanel bottom(SelectedProblemModel selection, UploadController uploads,
+                          StudiedController studiedControls) {
         JButton upload = new JButton("Upload");
         uploads.bind(upload);
+        JButton studiedButton = new JButton("Studied");
+        studiedControls.bindStudied(studiedButton);
+        JButton clearButton = new JButton("Clear Studied Tag");
+        studiedControls.bindClear(clearButton);
 
         JLabel selected = new JLabel(selection.describe());
         selection.addListener(() -> UiThread.run(() -> selected.setText(selection.describe())));
 
-        JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
-        row.add(upload);
-        row.add(selected);
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        buttons.add(upload);
+        buttons.add(studiedButton);
+        buttons.add(clearButton);
+
+        JPanel selectedRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        selectedRow.add(selected);
+
+        JPanel rows = new JPanel(new BorderLayout(0, 4));
+        rows.add(buttons, BorderLayout.NORTH);
+        rows.add(selectedRow, BorderLayout.CENTER);
 
         JPanel panel = new JPanel(new BorderLayout(0, 6));
         panel.add(message, BorderLayout.NORTH);
-        panel.add(row, BorderLayout.CENTER);
+        panel.add(rows, BorderLayout.CENTER);
         return panel;
     }
 
@@ -162,12 +190,14 @@ public class ProblemsPanel extends JPanel {
         message.setToolTipText(text);
     }
 
-    /** Marks the row of the currently selected problem (distinct from the highlighted row). */
+    /** Marks the row of the currently selected problem (distinct from the highlighted row), and the studied ones. */
     private static final class RowRenderer extends DefaultListCellRenderer {
         private final SelectedProblemModel selection;
+        private final StudiedStore studied;
 
-        RowRenderer(SelectedProblemModel selection) {
+        RowRenderer(SelectedProblemModel selection, StudiedStore studied) {
             this.selection = selection;
+            this.studied = studied;
         }
 
         @Override
@@ -176,7 +206,7 @@ public class ProblemsPanel extends JPanel {
             super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             if (value instanceof Problem p) {
                 boolean current = selection.selectedKey().map(k -> k.equalsIgnoreCase(p.key())).orElse(false);
-                setText(current ? p.displayName() + "   (selected)" : p.displayName());
+                setText(ProblemRowText.of(p.displayName(), current, studied.studiedOn(p.key())));
                 setFont(getFont().deriveFont(current ? Font.BOLD : Font.PLAIN));
             }
             return this;

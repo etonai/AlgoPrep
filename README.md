@@ -17,6 +17,7 @@ DevCycles 1-4 are Verified: every core capability in the plan is in place. DevCy
 | Left pane: the selected problem's statement, supplied notes and your own saved notes, as rendered Markdown, with **+** and **-** buttons to change the text size (remembered between runs) |
 | **Send Instructions** sends your instructions file to ChatGPT. **Reset** recovers if a send gets stuck |
 | **Upload** stages the selected problem's files and opens ChatGPT's file dialog, from the MAIN tab or the Problems tab |
+| **Studied** records today's date for the selected problem, and the Problems list shows `(STUDIED 2026-10-07)` on it. **Clear Studied Tag** removes it |
 | Dark and light themes, and all settings, remembered in `settings.json` |
 
 Still to come: more keyboard shortcuts and polish. The full design is in `doc/planning/AlgoPrepPlan-Claude02.md`.
@@ -68,6 +69,12 @@ Select a problem on the **Problems** tab (double-click or Enter), then press **U
 
 AlgoPrep copies the statement, the supplied notes and your saved notes (the ones that exist) into `<staging directory>\algoprep-upload` and opens ChatGPT's file dialog. In the dialog, press Ctrl+A, then Open, and add a message in ChatGPT if you want one. AlgoPrep never uploads solutions or test cases.
 
+### Tracking what you have studied
+
+Select a problem and press **Studied** after you have successfully studied it. There is a Studied button (with **Clear Studied Tag**) on the MAIN tab next to Upload, and one at the bottom of the Problems tab. They are the same, and both act on the **selected** problem. Studied records today's date, and pressing it again later replaces the date. Only the last date is kept. The Problems list then shows `(STUDIED 2026-10-07)` on that row, and a large light gray `STUDIED 2026-10-07` banner appears at the top of the **Problem** tab in the display window while that problem is selected. **Clear Studied Tag** removes the date if you pressed Studied by mistake.
+
+The dates are kept in `AlgoPrep_studied.csv` in your **HOME** directory, next to your notes, so the buttons need HOME to be set. It is a plain file with one `key,date` row per problem, and you can edit it by hand. **Refresh**, or switching to the Problems tab, re-reads it. If it cannot be read at all it is renamed to `AlgoPrep_studied.csv.bad` and AlgoPrep starts with no dates. This is the only file AlgoPrep writes in HOME. Your notes are never changed.
+
 ### DevTools
 
 The **DevTools** button opens Chromium DevTools for the current page. This is used to inspect ChatGPT's page when its selectors need updating. They live in `src/main/resources/js/chatgpt_selectors.json`.
@@ -87,6 +94,7 @@ Reports are written to `build/reports/tests/test/index.html`. A live ChatGPT pag
 | Chromium binaries | `jcef-bundle/` (project root, git-ignored) |
 | Browser profile and ChatGPT login | `%LOCALAPPDATA%\AlgoPrep\profile` |
 | Settings (theme, instructions file) | `%APPDATA%\AlgoPrep\settings.json` |
+| Studied dates | `AlgoPrep_studied.csv` in your HOME directory |
 | Upload staging (used from DC4) | `%LOCALAPPDATA%\AlgoPrep\upload-staging` |
 | Optional config | `%APPDATA%\AlgoPrep\config.properties` |
 

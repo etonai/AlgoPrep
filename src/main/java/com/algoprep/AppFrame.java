@@ -5,6 +5,7 @@ import com.algoprep.browser.BrowserPanel;
 import com.algoprep.config.SettingsStore;
 import com.algoprep.display.FontScaleModel;
 import com.algoprep.problem.ProblemWorkspace;
+import com.algoprep.studied.StudiedStore;
 import com.algoprep.theme.NativeThemeApplier;
 import com.algoprep.theme.NativeThemeModel;
 import com.algoprep.ui.DisplayPanel;
@@ -12,6 +13,7 @@ import com.algoprep.ui.MainPanel;
 import com.algoprep.ui.ProblemsPanel;
 import com.algoprep.ui.SettingsPanel;
 import com.algoprep.ui.StatusReporter;
+import com.algoprep.ui.StudiedController;
 import com.algoprep.ui.UploadController;
 import org.cef.browser.CefBrowser;
 
@@ -41,7 +43,7 @@ public class AppFrame extends JFrame {
 
     public AppFrame(AppState appState, BrowserPanel browserPanel, CefBrowser browser,
                     ChatGptBridge chatBridge, SettingsStore settings, ProblemWorkspace problems,
-                    String defaultStagingRoot,
+                    StudiedStore studied, String defaultStagingRoot,
                     NativeThemeModel themeModel, FontScaleModel fontScale,
                     StatusReporter statusReporter, Map<Integer, Runnable> browserShortcuts) {
         super("AlgoPrep");
@@ -53,16 +55,20 @@ public class AppFrame extends JFrame {
         statusLabel = new JLabel(" Starting...");
         statusLabel.setForeground(Color.DARK_GRAY);
 
-        DisplayPanel displayPanel = new DisplayPanel(problems.selection(), settings, themeModel, fontScale);
+        DisplayPanel displayPanel = new DisplayPanel(problems.selection(), settings, themeModel, fontScale, studied);
 
         // One Upload implementation, shared by the MAIN tab and the Problems tab
         UploadController uploads = new UploadController(appState, settings, chatBridge,
                 statusReporter, problems.selection(), defaultStagingRoot);
 
+        // One Studied implementation too, shared by the MAIN tab and the Problems tab
+        StudiedController studiedControls = new StudiedController(settings, problems.selection(),
+                studied, statusReporter);
+
         JTabbedPane rightTabs = new JTabbedPane();
         rightTabs.addTab("MAIN", new MainPanel(appState, settings, chatBridge, statusReporter,
-                problems.selection(), uploads));
-        rightTabs.addTab("Problems", new ProblemsPanel(problems, uploads));
+                problems.selection(), uploads, studiedControls));
+        rightTabs.addTab("Problems", new ProblemsPanel(problems, uploads, studiedControls, studied));
         rightTabs.addTab("Settings", new SettingsPanel(themeModel, problems, settings, defaultStagingRoot));
 
         JButton devToolsBtn = new JButton("DevTools");

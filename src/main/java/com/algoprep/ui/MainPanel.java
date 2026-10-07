@@ -38,6 +38,7 @@ public class MainPanel extends JPanel {
     private final StatusReporter status;
     private final SelectedProblemModel selection;
     private final UploadController uploads;
+    private final StudiedController studiedControls;
 
     private final JLabel problemLabel = new JLabel(" ");
     private final JLabel lastAttachedLabel = new JLabel(" ");
@@ -46,11 +47,13 @@ public class MainPanel extends JPanel {
     private final JButton resetButton = new JButton("Reset");
     private final JLabel sentIndicator = new JLabel(" ");
     private final JButton uploadButton = new JButton("Upload");
+    private final JButton studiedButton = new JButton("Studied");
+    private final JButton clearStudiedButton = new JButton("Clear Studied Tag");
     private final JTextArea uploadSummary = new JTextArea(3, 20);
 
     public MainPanel(AppState appState, SettingsStore settings, ChatBridge chatBridge,
                      StatusReporter status, SelectedProblemModel selection,
-                     UploadController uploads) {
+                     UploadController uploads, StudiedController studiedControls) {
         super();
         this.appState = appState;
         this.settings = settings;
@@ -58,6 +61,7 @@ public class MainPanel extends JPanel {
         this.status = status;
         this.selection = selection;
         this.uploads = uploads;
+        this.studiedControls = studiedControls;
 
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
@@ -86,6 +90,8 @@ public class MainPanel extends JPanel {
         // Upload state lives in the shared controller. This panel only shows its summary.
         uploads.bind(uploadButton);
         uploads.addListener(this::showUpload);
+        studiedControls.bindStudied(studiedButton);
+        studiedControls.bindClear(clearStudiedButton);
 
         refresh();
     }
@@ -100,6 +106,11 @@ public class MainPanel extends JPanel {
     /** Used by the Ctrl+Shift+U shortcut in DC5. Same trigger as the Problems tab's Upload. */
     public void triggerUpload() {
         uploads.trigger();
+    }
+
+    /** For a future shortcut. Same trigger as the Problems tab's Studied. */
+    public void triggerStudied() {
+        studiedControls.trigger();
     }
 
     // ---- panels ----
@@ -156,6 +167,8 @@ public class MainPanel extends JPanel {
 
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         buttons.add(uploadButton);
+        buttons.add(studiedButton);
+        buttons.add(clearStudiedButton);
 
         panel.add(left(uploadSummary));
         panel.add(Box.createVerticalStrut(4));
