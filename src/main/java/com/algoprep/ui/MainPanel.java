@@ -5,6 +5,7 @@ import com.algoprep.UiThread;
 import com.algoprep.bridge.ChatBridge;
 import com.algoprep.config.SettingsStore;
 import com.algoprep.instructions.InstructionsSender;
+import com.algoprep.problem.SelectedProblemModel;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -15,8 +16,9 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * MAIN tab (Plan section 6.1): the Problem, Instructions and Problem Files panels. The Problem and
- * Problem Files panels are placeholders until DC2 and DC4.
+ * MAIN tab (Plan section 6.1): the Problem, Instructions and Problem Files panels. The Problem panel
+ * shows the selection (the "Last attached" part arrives in DC4), and Problem Files is a placeholder
+ * until DC4.
  */
 public class MainPanel extends JPanel {
 
@@ -26,18 +28,21 @@ public class MainPanel extends JPanel {
     private final SettingsStore settings;
     private final ChatBridge chatBridge;
     private final StatusReporter status;
+    private final SelectedProblemModel selection;
 
+    private final JLabel problemLabel = new JLabel(" ");
     private final JTextField pathField = new JTextField();
     private final JButton sendButton = new JButton("Send Instructions");
     private final JLabel sentIndicator = new JLabel(" ");
 
     public MainPanel(AppState appState, SettingsStore settings, ChatBridge chatBridge,
-                     StatusReporter status) {
+                     StatusReporter status, SelectedProblemModel selection) {
         super();
         this.appState = appState;
         this.settings = settings;
         this.chatBridge = chatBridge;
         this.status = status;
+        this.selection = selection;
 
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
@@ -76,7 +81,9 @@ public class MainPanel extends JPanel {
 
     private JPanel problemPanel() {
         JPanel panel = titled("Problem");
-        panel.add(left(new JLabel("Selected: (none)")));
+        problemLabel.setText(selection.describe());
+        selection.addListener(() -> UiThread.run(() -> problemLabel.setText(selection.describe())));
+        panel.add(left(problemLabel));
         return panel;
     }
 

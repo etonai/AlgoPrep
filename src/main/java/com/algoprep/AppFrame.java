@@ -3,10 +3,12 @@ package com.algoprep;
 import com.algoprep.bridge.ChatGptBridge;
 import com.algoprep.browser.BrowserPanel;
 import com.algoprep.config.SettingsStore;
+import com.algoprep.problem.ProblemWorkspace;
 import com.algoprep.theme.NativeThemeApplier;
 import com.algoprep.theme.NativeThemeModel;
 import com.algoprep.ui.DisplayPanel;
 import com.algoprep.ui.MainPanel;
+import com.algoprep.ui.ProblemsPanel;
 import com.algoprep.ui.SettingsPanel;
 import com.algoprep.ui.StatusReporter;
 import org.cef.browser.CefBrowser;
@@ -36,7 +38,8 @@ public class AppFrame extends JFrame {
     private final NativeThemeApplier themeApplier = new NativeThemeApplier();
 
     public AppFrame(AppState appState, BrowserPanel browserPanel, CefBrowser browser,
-                    ChatGptBridge chatBridge, SettingsStore settings, NativeThemeModel themeModel,
+                    ChatGptBridge chatBridge, SettingsStore settings, ProblemWorkspace problems,
+                    NativeThemeModel themeModel,
                     StatusReporter statusReporter, Map<Integer, Runnable> browserShortcuts) {
         super("AlgoPrep");
 
@@ -50,9 +53,10 @@ public class AppFrame extends JFrame {
         DisplayPanel displayPanel = new DisplayPanel();
 
         JTabbedPane rightTabs = new JTabbedPane();
-        rightTabs.addTab("MAIN", new MainPanel(appState, settings, chatBridge, statusReporter));
-        rightTabs.addTab("Problems", placeholderTab("The problem list is added in DC2."));
-        rightTabs.addTab("Settings", new SettingsPanel(themeModel));
+        rightTabs.addTab("MAIN", new MainPanel(appState, settings, chatBridge, statusReporter,
+                problems.selection()));
+        rightTabs.addTab("Problems", new ProblemsPanel(problems));
+        rightTabs.addTab("Settings", new SettingsPanel(themeModel, problems));
 
         JButton devToolsBtn = new JButton("DevTools");
         devToolsBtn.setToolTipText("Open Chromium DevTools for this page");
@@ -111,13 +115,6 @@ public class AppFrame extends JFrame {
 
         setVisible(true);
         UiThread.run(() -> themeApplier.apply(this, themeModel.current()));
-    }
-
-    private static JComponent placeholderTab(String text) {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        panel.add(new JLabel(text), BorderLayout.NORTH);
-        return panel;
     }
 
     private void installKeyboardShortcuts(Map<Integer, Runnable> shortcuts) {

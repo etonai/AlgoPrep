@@ -7,6 +7,7 @@ import com.algoprep.browser.BrowserPanel;
 import com.algoprep.browser.DomBridge;
 import com.algoprep.config.AppConfig;
 import com.algoprep.config.SettingsStore;
+import com.algoprep.problem.ProblemWorkspace;
 import com.algoprep.theme.NativeThemeModel;
 import com.algoprep.ui.StatusReporter;
 import me.friwi.jcefmaven.CefAppBuilder;
@@ -35,6 +36,9 @@ public class Main {
         NativeThemeModel themeModel = new NativeThemeModel();
         themeModel.setTheme(settings.getTheme());
         themeModel.addListener((previous, current) -> settings.setTheme(current));
+
+        // Scans the saved PROBLEMS directory and restores the last selection, if still found
+        ProblemWorkspace problems = new ProblemWorkspace(settings, statusReporter::report);
 
         System.out.println("AlgoPrep starting...");
         System.out.println("  Profile  : " + config.getProfilePath());
@@ -80,7 +84,7 @@ public class Main {
         ChatGptBridge chatBridge    = new ChatGptBridge(domBridge, browser, appState);
 
         SwingUtilities.invokeLater(() ->
-                new AppFrame(appState, browserPanel, browser, chatBridge, settings, themeModel,
+                new AppFrame(appState, browserPanel, browser, chatBridge, settings, problems, themeModel,
                         statusReporter, browserShortcuts));
     }
 }
