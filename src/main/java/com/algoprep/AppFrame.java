@@ -50,13 +50,13 @@ public class AppFrame extends JFrame {
         statusLabel = new JLabel(" Starting...");
         statusLabel.setForeground(Color.DARK_GRAY);
 
-        DisplayPanel displayPanel = new DisplayPanel();
+        DisplayPanel displayPanel = new DisplayPanel(problems.selection(), settings, themeModel);
 
         JTabbedPane rightTabs = new JTabbedPane();
         rightTabs.addTab("MAIN", new MainPanel(appState, settings, chatBridge, statusReporter,
                 problems.selection()));
         rightTabs.addTab("Problems", new ProblemsPanel(problems));
-        rightTabs.addTab("Settings", new SettingsPanel(themeModel, problems));
+        rightTabs.addTab("Settings", new SettingsPanel(themeModel, problems, settings));
 
         JButton devToolsBtn = new JButton("DevTools");
         devToolsBtn.setToolTipText("Open Chromium DevTools for this page");

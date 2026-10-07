@@ -1,6 +1,7 @@
 package com.algoprep.ui;
 
 import com.algoprep.UiThread;
+import com.algoprep.config.SettingsStore;
 import com.algoprep.problem.ProblemWorkspace;
 import com.algoprep.theme.NativeTheme;
 import com.algoprep.theme.NativeThemeModel;
@@ -10,16 +11,19 @@ import java.awt.*;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
- * Settings tab (Plan section 6.3). This cycle has the theme and the PROBLEMS directory. The HOME
- * and staging folders are added in later cycles.
+ * Settings tab (Plan section 6.3): the theme, and the PROBLEMS and HOME directories. The staging
+ * folder is added in a later cycle.
  */
 public class SettingsPanel extends JPanel {
 
     private static final Color WARNING = new Color(0xC0, 0x50, 0x00);
 
-    public SettingsPanel(NativeThemeModel themeModel, ProblemWorkspace workspace) {
+    public SettingsPanel(NativeThemeModel themeModel, ProblemWorkspace workspace,
+                         SettingsStore settings) {
         super(new GridBagLayout());
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
@@ -29,7 +33,20 @@ public class SettingsPanel extends JPanel {
         content.add(themeControls(themeModel));
         content.add(Box.createVerticalStrut(16));
         content.add(sectionLabel("PROBLEMS directory"));
-        content.add(problemsControls(workspace));
+        content.add(directoryControls(
+                "Select PROBLEMS Directory",
+                workspace::directoryText,
+                dir -> workspace.setDirectory(dir),
+                // PROBLEMS has a catalog, so its labels follow the catalog's scans
+                refresh -> workspace.catalog().addListener(() -> UiThread.run(refresh))));
+        content.add(Box.createVerticalStrut(16));
+        content.add(sectionLabel("HOME directory (your saved notes)"));
+        content.add(directoryControls(
+                "Select HOME Directory",
+                settings::getHomeDir,
+                dir -> settings.setHomeDir(dir.toString()),
+                // HOME is not scanned, so its labels follow the settings
+                refresh -> settings.addListener(() -> UiThread.run(refresh))));
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
@@ -67,10 +84,15 @@ public class SettingsPanel extends JPanel {
     }
 
     /**
-     * Path label plus Browse. A saved path that no longer exists stays visible with a warning and
-     * is not silently replaced.
+     * A path label, a warning line and Browse, shared by the PROBLEMS and HOME settings. A saved
+     * path that no longer exists stays visible with a warning and is not silently replaced.
+     *
+     * @param currentText  the saved path text, or null if unset
+     * @param onChosen     called with the directory the user picked
+     * @param subscribe    registers the label-refresh action with whatever signals a change
      */
-    private JPanel problemsControls(ProblemWorkspace workspace) {
+    private JPanel directoryControls(String dialogTitle, Supplier<String> currentText,
+                                     Consumer<Path> onChosen, Consumer<Runnable> subscribe) {
         JLabel pathLabel = new JLabel();
         pathLabel.setFont(pathLabel.getFont().deriveFont(Font.PLAIN, 11f));
         JLabel warningLabel = new JLabel(" ");
@@ -78,7 +100,7 @@ public class SettingsPanel extends JPanel {
         warningLabel.setForeground(WARNING);
 
         Runnable refreshLabels = () -> {
-            String text = workspace.directoryText();
+            String text = currentText.get();
             if (text == null || text.isBlank()) {
                 pathLabel.setText("(not set)");
                 pathLabel.setToolTipText(null);
@@ -89,20 +111,20 @@ public class SettingsPanel extends JPanel {
             pathLabel.setToolTipText(text);
             warningLabel.setText(isDirectory(text) ? " " : "Warning: this directory was not found.");
         };
-        workspace.catalog().addListener(() -> UiThread.run(refreshLabels));
+        subscribe.accept(refreshLabels);
         refreshLabels.run();
 
         JButton browse = new JButton("Browse...");
         browse.addActionListener(e -> {
             JFileChooser chooser = new JFileChooser();
-            chooser.setDialogTitle("Select PROBLEMS Directory");
+            chooser.setDialogTitle(dialogTitle);
             chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-            String current = workspace.directoryText();
+            String current = currentText.get();
             if (current != null && !current.isBlank() && isDirectory(current)) {
                 chooser.setCurrentDirectory(new File(current));
             }
             if (chooser.showOpenDialog(SettingsPanel.this) != JFileChooser.APPROVE_OPTION) return;
-            workspace.setDirectory(chooser.getSelectedFile().toPath().toAbsolutePath());
+            onChosen.accept(chooser.getSelectedFile().toPath().toAbsolutePath());
         });
 
         return verticalPanel(pathLabel, warningLabel, browse);
