@@ -60,6 +60,11 @@ public final class SettingsStore {
     public synchronized String getLastSelectedKey()  { return data.lastSelectedKey; }
     public synchronized NativeTheme getTheme()       { return data.theme != null ? data.theme : NativeTheme.DARK; }
 
+    /** The saved staging root, or {@code defaultRoot} when none is saved. */
+    public synchronized String effectiveStagingRoot(String defaultRoot) {
+        return data.stagingRoot != null && !data.stagingRoot.isBlank() ? data.stagingRoot : defaultRoot;
+    }
+
     public void setInstructionsFile(String v) { update(() -> data.instructionsFile = v, () -> data.instructionsFile); }
     public void setProblemsDir(String v)      { update(() -> data.problemsDir = v,      () -> data.problemsDir); }
     public void setHomeDir(String v)          { update(() -> data.homeDir = v,          () -> data.homeDir); }

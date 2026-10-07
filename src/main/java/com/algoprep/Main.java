@@ -84,7 +84,8 @@ public class Main {
         ChatGptBridge chatBridge    = new ChatGptBridge(domBridge, browser, appState);
 
         SwingUtilities.invokeLater(() ->
-                new AppFrame(appState, browserPanel, browser, chatBridge, settings, problems, themeModel,
+                new AppFrame(appState, browserPanel, browser, chatBridge, settings, problems,
+                        config.getDefaultStagingRootPath(), themeModel,
                         statusReporter, browserShortcuts));
     }
 }

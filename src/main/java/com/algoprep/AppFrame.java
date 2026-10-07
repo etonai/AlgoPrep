@@ -39,6 +39,7 @@ public class AppFrame extends JFrame {
 
     public AppFrame(AppState appState, BrowserPanel browserPanel, CefBrowser browser,
                     ChatGptBridge chatBridge, SettingsStore settings, ProblemWorkspace problems,
+                    String defaultStagingRoot,
                     NativeThemeModel themeModel,
                     StatusReporter statusReporter, Map<Integer, Runnable> browserShortcuts) {
         super("AlgoPrep");
@@ -54,9 +55,9 @@ public class AppFrame extends JFrame {
 
         JTabbedPane rightTabs = new JTabbedPane();
         rightTabs.addTab("MAIN", new MainPanel(appState, settings, chatBridge, statusReporter,
-                problems.selection()));
+                problems.selection(), defaultStagingRoot));
         rightTabs.addTab("Problems", new ProblemsPanel(problems));
-        rightTabs.addTab("Settings", new SettingsPanel(themeModel, problems, settings));
+        rightTabs.addTab("Settings", new SettingsPanel(themeModel, problems, settings, defaultStagingRoot));
 
         JButton devToolsBtn = new JButton("DevTools");
         devToolsBtn.setToolTipText("Open Chromium DevTools for this page");
