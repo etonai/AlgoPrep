@@ -21,6 +21,7 @@ class DisplayPanelTest {
     @TempDir
     Path tmp;
 
+    private final SelectedProblemModel selection = new SelectedProblemModel();
     private FontScaleModel scale;
     private DisplayPanel panel;
     private JButton smaller;
@@ -48,7 +49,7 @@ class DisplayPanelTest {
     private void build() throws Exception {
         SettingsStore settings = new SettingsStore(tmp.resolve("settings.json"), m -> { });
         edt(() -> {
-            panel = new DisplayPanel(new SelectedProblemModel(), settings, new NativeThemeModel(), scale,
+            panel = new DisplayPanel(selection, settings, new NativeThemeModel(), scale,
                     new StudiedStore(java.time.Clock.systemDefaultZone(), m -> { }));
             smaller = find(panel, "-");
             larger = find(panel, "+");
@@ -151,6 +152,71 @@ class DisplayPanelTest {
 
         assertFalse(smaller.isFocusable());
         assertFalse(larger.isFocusable());
+    }
+
+    private com.algoprep.problem.Problem problem(int number) throws Exception {
+        String key = String.format("%04d_p%d", number, number);
+        Path statement = tmp.resolve(key + "_problem.md");
+        java.nio.file.Files.writeString(statement, "Statement " + number);
+        return new com.algoprep.problem.Problem(key, number, "P" + number, statement, java.util.Optional.empty());
+    }
+
+    private JTabbedPane tabs() {
+        return (JTabbedPane) ((BorderLayout) panel.getLayout()).getLayoutComponent(BorderLayout.CENTER);
+    }
+
+    private void select(com.algoprep.problem.Problem p) throws Exception {
+        selection.select(p);
+        edt(() -> { }); // the update is applied on the Swing thread
+    }
+
+    @Test
+    void selectingADifferentProblemGoesToTheProblemTab() throws Exception {
+        build();
+        select(problem(1));
+        for (int tab : new int[] {1, 2}) {
+            edt(() -> tabs().setSelectedIndex(tab));
+
+            select(problem(tab + 1));
+
+            assertEquals(0, tabs().getSelectedIndex());
+        }
+    }
+
+    @Test
+    void selectingWhileOnTheProblemTabStaysThere() throws Exception {
+        build();
+
+        select(problem(1));
+
+        assertEquals(0, tabs().getSelectedIndex());
+    }
+
+    @Test
+    void clearingTheSelectionGoesToTheProblemTab() throws Exception {
+        build();
+        select(problem(1));
+        edt(() -> tabs().setSelectedIndex(1));
+
+        selection.clear();
+        edt(() -> { });
+
+        assertEquals(0, tabs().getSelectedIndex());
+    }
+
+    @Test
+    void aRefreshOfTheSameProblemKeepsTheOpenTab() throws Exception {
+        build();
+        com.algoprep.problem.Problem one = problem(1);
+        select(one);
+        edt(() -> tabs().setSelectedIndex(2));
+
+        // A refresh finds the same key again, with a new Problem object, so the model notifies
+        selection.reconcile(java.util.List.of(new com.algoprep.problem.Problem(
+                one.key(), 1, "Renamed", one.statement(), java.util.Optional.empty())));
+        edt(() -> { });
+
+        assertEquals(2, tabs().getSelectedIndex());
     }
 
     @Test

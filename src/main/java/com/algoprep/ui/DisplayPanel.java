@@ -41,6 +41,7 @@ public class DisplayPanel extends JPanel {
     private final JButton smaller = new JButton("-");
     private final JButton larger = new JButton("+");
     private String lastHome;
+    private String lastKey;
 
     public DisplayPanel(SelectedProblemModel selection, SettingsStore settings,
                         NativeThemeModel themeModel, FontScaleModel fontScale,
@@ -62,7 +63,8 @@ public class DisplayPanel extends JPanel {
         add(sizeBar(), BorderLayout.NORTH);
         add(tabs, BorderLayout.CENTER);
 
-        selection.addListener(() -> UiThread.run(this::reloadAll));
+        lastKey = selection.selectedKey().orElse(null);
+        selection.addListener(() -> UiThread.run(this::onSelectionChanged));
         selection.addListener(() -> UiThread.run(this::updateStudiedLabel));
         studied.addListener(() -> UiThread.run(this::updateStudiedLabel));
         settings.addListener(() -> UiThread.run(this::onSettingsChanged));
@@ -115,6 +117,19 @@ public class DisplayPanel extends JPanel {
         larger.setEnabled(fontScale.canIncrease());
         smaller.setToolTipText(fontScale.canDecrease() ? "Smaller text" + size : "Smallest size" + size);
         larger.setToolTipText(fontScale.canIncrease() ? "Larger text" + size : "Largest size" + size);
+    }
+
+    /**
+     * A different problem (or none) resets the pane to the Problem tab. The model also notifies for
+     * refreshes of the same key, which must leave the open tab alone.
+     */
+    private void onSelectionChanged() {
+        String key = selection.selectedKey().orElse(null);
+        if (!Objects.equals(key, lastKey)) {
+            lastKey = key;
+            tabs.setSelectedIndex(PROBLEM);
+        }
+        reloadAll();
     }
 
     private void onSettingsChanged() {

@@ -14,7 +14,7 @@ DevCycles 1-4 are Verified: every core capability in the plan is in place. DevCy
 |---|
 | Three-pane window: your problem and notes on the left, ChatGPT in the middle, controls on the right |
 | **Problems** tab: filter, refresh and select a problem from your PROBLEMS directory |
-| Left pane: the selected problem's statement, supplied notes and your own saved notes, as rendered Markdown, with **+** and **-** buttons to change the text size (remembered between runs) |
+| Left pane: the selected problem's statement, supplied notes and your own saved notes, as rendered Markdown, with **+** and **-** buttons to change the text size (remembered between runs). Selecting a different problem switches back to the Problem tab |
 | **Send Instructions** sends your instructions file to ChatGPT. **Reset** recovers if a send gets stuck |
 | **Upload** stages the selected problem's files and opens ChatGPT's file dialog, from the MAIN tab or the Problems tab |
 | **Studied** records today's date for the selected problem, and the Problems list shows `(STUDIED 2026-10-07)` on it. **Clear Studied Tag** removes it |
